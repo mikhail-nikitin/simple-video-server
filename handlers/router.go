@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/gorilla/mux"
-	"net/http"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 func Router() http.Handler {
