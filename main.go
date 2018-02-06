@@ -10,20 +10,26 @@ import (
 	"syscall"
 )
 
+const logFileName = "my.log"
+
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
-	file, err := os.OpenFile("my.log", os.O_CREATE | os.O_APPEND | os.O_WRONLY, 0666)
-	if err == nil {
-		log.SetOutput(file)
-	}
-	defer file.Close()
+	logFile := startLoggingToFile()
+	defer logFile.Close()
 
 	const serverUrl = ":8000"
 	srv := startServer(serverUrl)
 
-	killChannel := getSignalChannel()
-	waitForKillSignal(killChannel)
+	signalChannel := getSignalChannel()
+	handleSignals(signalChannel, srv, logFile)
 	srv.Shutdown(context.Background())
+}
+func startLoggingToFile() *os.File {
+	file, err := os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err == nil {
+		log.SetOutput(file)
+	}
+	return file
 }
 
 func startServer(serverUrl string) *http.Server {
@@ -37,17 +43,32 @@ func startServer(serverUrl string) *http.Server {
 }
 
 func getSignalChannel() chan os.Signal {
-	killChannel := make(chan os.Signal)
-	signal.Notify(killChannel, os.Kill, os.Interrupt, syscall.SIGTERM)
-	return killChannel
+	signalChannel := make(chan os.Signal)
+	signal.Notify(signalChannel, os.Kill, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR1)
+	return signalChannel
 }
 
-func waitForKillSignal(c chan os.Signal) {
-	killSignal := <- c
-	switch killSignal {
-	case os.Interrupt:
-		log.Info("Got interrupt signal")
-	case syscall.SIGTERM:
-		log.Info("Got termination signal")
+func handleSignals(c chan os.Signal, server *http.Server, logFile *os.File) {
+	for {
+		killSignal := <- c
+		switch killSignal {
+		case os.Interrupt:
+			log.Info("Got interrupt signal")
+			server.Shutdown(context.Background())
+			log.Info("Gracefully exited")
+			return
+
+		case syscall.SIGTERM:
+			log.Info("Got termination signal")
+			server.Shutdown(context.Background())
+			log.Info("Gracefully exited")
+			return
+
+		case syscall.SIGUSR1:
+			log.Info("Reopening log files")
+			logFile.Close()
+			logFile = startLoggingToFile()
+			log.Info("Reopened log")
+		}
 	}
 }
