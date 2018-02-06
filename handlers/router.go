@@ -17,10 +17,12 @@ func Router() http.Handler {
 func logMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
-			"method": r.Method,
-			"url": r.URL,
-		}).Info("start")
+			"method":     r.Method,
+			"url":        r.URL,
+			"remoteAddr": r.RemoteAddr,
+			"userAgent":  r.UserAgent(),
+		}).Info("start serving request")
 		h.ServeHTTP(w, r)
-		log.Info("stop")
+		log.Info("request have been served")
 	})
 }
