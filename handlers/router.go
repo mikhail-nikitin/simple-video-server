@@ -10,7 +10,7 @@ func Router() http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/list", listVideos).Methods(http.MethodGet)
-	s.HandleFunc("/video/d290f1ee-6c54-4b01-90e6-d701748f0851", getVideoInfo).Methods(http.MethodGet)
+	s.HandleFunc("/video/{id}", getVideoInfo).Methods(http.MethodGet)
 	return logMiddleware(s)
 }
 
