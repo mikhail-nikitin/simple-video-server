@@ -1,15 +1,15 @@
 package main
 
 import (
-	"net/http"
-	log "github.com/sirupsen/logrus"
-	"github.com/mikhail-nikitin/simple-video-server/handlers"
-	"os"
 	"context"
-	"os/signal"
-	"syscall"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/mikhail-nikitin/simple-video-server/handlers"
+	log "github.com/sirupsen/logrus"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const logFileName = "my.log"
@@ -53,13 +53,13 @@ func startServer(serverUrl string, db *sql.DB) *http.Server {
 
 func getSignalChannel() chan os.Signal {
 	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, os.Kill, os.Interrupt, syscall.SIGTERM, syscall.Signal(10))
+	signal.Notify(signalChannel, os.Kill, os.Interrupt, syscall.SIGTERM, syscall.Signal(30))
 	return signalChannel
 }
 
 func handleSignals(c chan os.Signal, server *http.Server, logFile *os.File) {
 	for {
-		killSignal := <- c
+		killSignal := <-c
 		switch killSignal {
 		case os.Interrupt:
 			log.Info("Got interrupt signal")
@@ -73,7 +73,7 @@ func handleSignals(c chan os.Signal, server *http.Server, logFile *os.File) {
 			log.Info("Gracefully exited")
 			return
 
-		case syscall.Signal(10):
+		case syscall.Signal(30):
 			log.Info("Reopening log files")
 			logFile.Close()
 			logFile = startLoggingToFile()
