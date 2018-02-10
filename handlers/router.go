@@ -11,6 +11,7 @@ func Router() http.Handler {
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/list", listVideos).Methods(http.MethodGet)
 	s.HandleFunc("/video/{id}", getVideoInfo).Methods(http.MethodGet)
+	s.HandleFunc("/video", uploadVideo).Methods(http.MethodPost)
 	return logMiddleware(s)
 }
 
