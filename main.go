@@ -8,6 +8,8 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const logFileName = "my.log"
@@ -17,13 +19,20 @@ func main() {
 	logFile := startLoggingToFile()
 	defer logFile.Close()
 
+	db, err := sql.Open("mysql", "video_server:Q1234@/simple_video_server")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer db.Close()
+
 	const serverUrl = ":8000"
-	srv := startServer(serverUrl)
+	srv := startServer(serverUrl, db)
 
 	signalChannel := getSignalChannel()
 	handleSignals(signalChannel, srv, logFile)
 	srv.Shutdown(context.Background())
 }
+
 func startLoggingToFile() *os.File {
 	file, err := os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
@@ -32,8 +41,8 @@ func startLoggingToFile() *os.File {
 	return file
 }
 
-func startServer(serverUrl string) *http.Server {
-	router := handlers.Router()
+func startServer(serverUrl string, db *sql.DB) *http.Server {
+	router := handlers.Router(db)
 	srv := &http.Server{Addr: serverUrl, Handler: router}
 	go func() {
 		log.WithFields(log.Fields{"url": serverUrl}).Info("listening")
@@ -44,7 +53,7 @@ func startServer(serverUrl string) *http.Server {
 
 func getSignalChannel() chan os.Signal {
 	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, os.Kill, os.Interrupt, syscall.SIGTERM, syscall.SIGUSR1)
+	signal.Notify(signalChannel, os.Kill, os.Interrupt, syscall.SIGTERM, syscall.Signal(10))
 	return signalChannel
 }
 
@@ -64,7 +73,7 @@ func handleSignals(c chan os.Signal, server *http.Server, logFile *os.File) {
 			log.Info("Gracefully exited")
 			return
 
-		case syscall.SIGUSR1:
+		case syscall.Signal(10):
 			log.Info("Reopening log files")
 			logFile.Close()
 			logFile = startLoggingToFile()

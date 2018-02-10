@@ -4,9 +4,13 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"database/sql"
 )
 
-func Router() http.Handler {
+var dbConn *sql.DB
+
+func Router(db *sql.DB) http.Handler {
+	dbConn = db
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/list", listVideos).Methods(http.MethodGet)

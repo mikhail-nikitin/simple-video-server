@@ -34,8 +34,23 @@ var allAvailableVideos = VideoList{
 	},
 }
 
-func getAvailableVideos() VideoList {
-	return allAvailableVideos
+func getAvailableVideos() (VideoList, error) {
+	rows, err := dbConn.Query("SELECT video_key, title, duration, url, thumbnail_url FROM video")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	list := make(VideoList, 0)
+	for rows.Next() {
+		var video Video
+		err = rows.Scan(&video.Id, &video.Name, &video.Duration, &video.Url, &video.Thumbnail)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, video)
+	}
+	return list, nil
 }
 
 func getVideoById(id string) *Video {
