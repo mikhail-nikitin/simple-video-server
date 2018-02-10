@@ -1,5 +1,9 @@
 package handlers
 
+import (
+	"github.com/segmentio/ksuid"
+)
+
 type Video struct {
 	Id        string `json:"id"`
 	Name      string `json:"name"`
@@ -46,4 +50,17 @@ func getVideoByKey(key string) (*Video, error) {
 	} else {
 		return nil, nil
 	}
+}
+
+func generateVideoKey() string {
+	return ksuid.New().String()
+}
+
+func addVideo(key string, name string, url string, thumbnailUrl string) error {
+	rows, err := dbConn.Query(`INSERT INTO video SET video_key = ?, title = ?, url = ?, thumbnail_url = ?`, key, name, url, thumbnailUrl)
+	if err != nil {
+		return err
+	}
+	rows.Close()
+	return nil
 }
