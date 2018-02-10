@@ -10,30 +10,6 @@ type Video struct {
 
 type VideoList []Video
 
-var allAvailableVideos = VideoList{
-	Video{
-		Id:        "d290f1ee-6c54-4b01-90e6-d701748f0851",
-		Name:      "Black Retrospective Woman",
-		Duration:  15,
-		Thumbnail: "/content/d290f1ee-6c54-4b01-90e6-d701748f0851/screen.jpg",
-		Url:       "/content/d290f1ee-6c54-4b01-90e6-d701748f0851/index.mp4",
-	},
-	Video{
-		Id:        "sldjfl34-dfgj-523k-jk34-5jk3j45klj34",
-		Name:      "Go Rally TEASER-HD",
-		Duration:  41,
-		Thumbnail: "/content/sldjfl34-dfgj-523k-jk34-5jk3j45klj34/screen.jpg",
-		Url:       "/content/sldjfl34-dfgj-523k-jk34-5jk3j45klj34/index.mp4",
-	},
-	Video{
-		Id:        "hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345",
-		Name:      "Танцор",
-		Duration:  92,
-		Thumbnail: "/content/hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345/screen.jpg",
-		Url:       "/content/hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345/index.mp4",
-	},
-}
-
 func getAvailableVideos() (VideoList, error) {
 	rows, err := dbConn.Query("SELECT video_key, title, duration, url, thumbnail_url FROM video")
 	if err != nil {
@@ -53,12 +29,21 @@ func getAvailableVideos() (VideoList, error) {
 	return list, nil
 }
 
-func getVideoById(id string) *Video {
-	for i := 0; i < len(allAvailableVideos); i++ {
-		v := &allAvailableVideos[i]
-		if v.Id == id {
-			return v
-		}
+func getVideoByKey(key string) (*Video, error) {
+	rows, err := dbConn.Query("SELECT video_key, title, duration, url, thumbnail_url FROM video WHERE video_key = ?", key)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	defer rows.Close()
+
+	var video Video
+	if rows.Next() {
+		err = rows.Scan(&video.Id, &video.Name, &video.Duration, &video.Url, &video.Thumbnail)
+		if err != nil {
+			return nil, err
+		}
+		return &video, nil
+	} else {
+		return nil, nil
+	}
 }
