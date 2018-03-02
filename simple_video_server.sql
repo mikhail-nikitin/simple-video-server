@@ -1,4 +1,4 @@
-CREATE DATABASE simple_video_server;
+CREATE DATABASE IF NOT EXISTS simple_video_server;
 
 USE simple_video_server;
 DROP TABLE IF EXISTS video;
