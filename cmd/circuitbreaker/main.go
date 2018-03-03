@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -90,11 +89,9 @@ func (r *BadPoemClient) run() {
 		if r.cb.isAvailable() {
 			status, err := getStatus(s)
 			if err != nil || status == 500 {
-				fmt.Println("500")
 				r.cb.registerFailure()
 			}
 			if err == nil && status == 404 {
-				fmt.Println("died?")
 				isSessionToGet = true
 				time.Sleep(time.Millisecond * 5)
 			}
